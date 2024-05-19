@@ -6,25 +6,36 @@ import cheerio from 'cheerio'
 import fetch from 'node-fetch'
 import axios from 'axios'
 import moment from 'moment-timezone'
-import { en, es, id, ar, pt } from './lib/idiomas/total-idiomas.js'
+import { en, es, id, ar, pt, de, it } from './lib/idiomas/total-idiomas.js'
 
 // ES ➜ Agregué primero el número del Bot como prioridad
 // ES ➜ Si desea recibir reportes debe de usar los tres parámetros (Número, nombre y true)
 // EN ➜ Add the Bot number as priority first
 // EN ➜ If you want to receive reports you must use the three parameters (Number, name and true)
 global.owner = [
-['5492266466080', '𝙊𝙬𝙣𝙚𝙧 💖🐈', true], //𝙂𝙖𝙩𝙖𝘽𝙤𝙩𝙇𝙞𝙩𝙚-𝙈𝘿 🌻🐈
-['573183650526', '𝙂𝘽 𝘼𝙨𝙞𝙨𝙩𝙚𝙣𝙘𝙞𝙖 💖🐈', true],
-['51982233590', '𝙂𝘽 Develooper 💖🐈', true],
-['593968585383'], ['5217294888993'], ['5492266613038'], ["51906662557"], ['51948705559']]
+['447700168473', '𝙊𝙬𝙣𝙚𝙧 💖🐈', true], //𝙂𝙖𝙩𝙖𝘽𝙤𝙩𝙇𝙞𝙩𝙚-𝙈𝘿 🌻🐈
+['593968263524', '𝙂𝘽 𝘼𝙨𝙞𝙨𝙩𝙚𝙣𝙘𝙞𝙖 💖🐈', true],
+['593968585383'],
+['595976126756'],
+['201066826750'],
+['201033024135'],
+['50492280729'],
+["5215649706747"]]
 
 global.mods = [] 
 global.prems = []
-   
+
+// ❰❰ methodCode ❱❱
+// [ES] > Agregue el número del Bot en "botNumberCode" si desea recibir código de 8 dígitos sin registrar el número en la consola.
+// [EN] > Add the Bot number in "botNumberCode" if you want to receive 8-digit code without registering the number in the console.
+global.botNumberCode = "" //example: "+59309090909"
+global.confirmCode = "" // No tocar esto : Do not touch this line
+
 // ES ➜ Agregue el código de idioma el cual usará GataBot  
 // EN ➜ Add the language code which GataBot will use
 //  es = Español      id = Bahasa Indonesia       ar = عرب
-//  en = English      pt = Português 
+//  en = English      pt = Português              de = Deutsch
+//  it = Italiano
 global.lenguajeGB = es  //<-- Predeterminado en idioma Español 
 
 // ES ➜ Consigue Apikey en https://platform.openai.com/account/api-keys
@@ -39,26 +50,27 @@ global.keysxteammm = ['29d4b59a4aa687ca', '5LTV57azwaid7dXfz5fzJu', 'cb15ed422c7
 global.keysxteam = keysxteammm[Math.floor(keysxteammm.length * Math.random())]
 global.keysneoxrrr = ['5VC9rvNx', 'cfALv5']
 global.keysneoxr = keysneoxrrr[Math.floor(keysneoxrrr.length * Math.random())]
-global.lolkeysapi = 'GataDios'
+global.lolkeysapi = 'Gata_Dios'
 global.itsrose = ['4b146102c4d500809da9d1ff']
 global.baileys = '@whiskeysockets/baileys'
 
 global.APIs = { 
-  xteam: 'https://api.xteam.xyz',
-  dzx: 'https://api.dhamzxploit.my.id',
-  lol: 'https://api.lolhuman.xyz',
-  violetics: 'https://violetics.pw',
-  neoxr: 'https://api.neoxr.my.id',
-  zenzapis: 'https://api.zahwazein.xyz',
-  akuari: 'https://api.akuari.my.id',
-  akuari2: 'https://apimu.my.id',	
-  fgmods: 'https://api-fgmods.ddns.net',
-  botcahx: 'https://api.botcahx.biz.id',
-  ibeng: 'https://api.ibeng.tech/docs',	
-  rose: 'https://api.itsrose.site',
-  popcat : 'https://api.popcat.xyz',
-  xcoders : 'https://api-xcoders.site'
-},
+lolhuman: { url: 'https://api.lolhuman.xyz/api/', key: lolkeysapi },
+neoxr: { url: 'https://api.neoxr.eu/api/', key: null },
+skizo: { url: 'https://skizo.tech/api/', key: 'GataDios' },
+aemt: { url: 'https://aemt.me/', key: null },
+alyachan: { url: 'https://api.alyachan.dev/api/', key: 'GataDios' },
+zahwazein: { url: 'https://api.zahwazein.xyz', key: null },
+akuari: { url: 'https://apimu.my.id', key: null },
+apimu: { url: 'https://api.xteam.xyz', key: null },
+fgmods: { url: 'https://api-fgmods.ddns.net', key: null },
+botcahx: { url: 'https://api.botcahx.biz.id', key: null },
+ibeng: { url: 'https://api.ibeng.tech/docs', key: null },
+itsrose: { url: 'https://api.itsrose.site', key: null },
+popcat: { url: 'https://api.popcat.xyz', key: null },
+xcoders: { url: 'https://api-xcoders.site', key: 'Frieren' }
+}
+
 global.APIKeys = { 
   'https://api.xteam.xyz': `${keysxteam}`,
   'https://api.lolhuman.xyz': `${lolkeysapi}`,
@@ -95,8 +107,8 @@ global.desc = '' //agrega una descripción corta
 global.desc2 = '' //agrega una descripción larga (Solo se aplicará si su whasapp no tiene descripción)
 global.country = '' //agrega tú país ejemplo: 🇪🇨
 
-global.vs = '1.3.2-(beta)'
-global.vsJB = '4.5 (Beta)'
+global.vs = '1.4.0'
+global.vsJB = '4.5'
 
 global.gt = '𝙂𝙖𝙩𝙖𝘽𝙤𝙩𝙇𝙞𝙩𝙚-𝙈𝘿'
 global.yt = 'https://youtube.com/@gatadios'

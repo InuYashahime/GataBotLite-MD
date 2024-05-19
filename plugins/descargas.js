@@ -1,10 +1,15 @@
-import { youtubedl, youtubeSearch, youtubedlv2, tiktokdl } from '@bochilteam/scraper'  
+import { youtubedl, youtubeSearch, youtubedlv2, tiktokdl } from '@bochilteam/scraper'
+import { codeToEmoji, flagToCountry } from 'emoji-country-flags'
+import uploader from '../lib/uploadImage.js'
 const regex = /(?:https|git)(?::\/\/|@)github\.com[\/:]([^\/:]+)\/(.+)/i;
 import { facebook } from "@xct007/frieren-scraper"
-import { googleImage } from '@bochilteam/scraper'
+import { googleImage, mediafiredl } from '@bochilteam/scraper'
 import fetch from "node-fetch"
 import yts from "yt-search"
 import ytdl from 'ytdl-core'
+import { pipeline } from 'stream'
+import { promisify } from 'util'
+import os from 'os'
 import axios from 'axios'
 import Spotify from "spotifydl-x"
 
@@ -16,7 +21,7 @@ const isCommand2 = /^(play|play2)$/i.test(command)
 const isCommand4 = /^(fgmp3|dlmp3|getaud|yt(a|mp3)?)$/i.test(command)
 const isCommand5 = /^(ytmp3doc|ytadoc)$/i.test(command)
 const isCommand6 = /^(fgmp4|dlmp4|getvid|yt(v|mp4)?)$/i.test(command)
-const isCommand7 = /^(ytmp4doc|ytvdoc)$/i.test(command)
+const isCommand7 = /^(ytmp4doc|ytvdoc|play4|play3)$/i.test(command)
 const isCommand8 = /^(facebook|fb|facebookdl|fbdl)$/i.test(command)
 const isCommand9 = /^(mediafire(dl)?|dlmediafire)$/i.test(command)
 const isCommand10 = /^(ytmax)$/i.test(command)
@@ -29,6 +34,7 @@ const isCommand16 = /^(spot(ify)?search)$/i.test(command)
 const isCommand17 = /^(i(nsta)?g(ram)?(dl)?|igimage|igdownload)$/i.test(command)
 const isCommand18 = /^((dl)?tw(it(ter(dl|x)?)?)?|x|t?tx)$/i.test(command)
 const isCommand19 = /^(gitclone|clonarepo|clonarrepo|repoclonar)$/i.test(command)
+const isCommand20 = /^(bardimg|bardimage|geminiimg|geminiimage|geminimg|geminimage)$/i.test(command)
 
 async function reportError(e) {
 let errb = await m.reply(lenguajeGB['smsMalError3']() + '\n*' + lenguajeGB.smsMensError1() + '*\n*' + usedPrefix + `${lenguajeGB.lenguaje() == 'es' ? 'reporte' : 'report'}` + '* ' + `${lenguajeGB.smsMensError2()} ` + usedPrefix + command)
@@ -56,14 +62,16 @@ reportError(e)
 break
     
 case isCommand2:
+let q, v, yt, dl_url, ttl, size, lolhuman, lolh, n, n2, n3, n4, cap, qu, currentQuality   
 if (!text) return m.reply(lenguajeGB.smsMalused2() + `*${usedPrefix + command} Billie Eilish - Bellyache*`)
-try{    
-if (command == 'play') { 
-let vid = (await yts(text)).all[0]
+try {
 const yt_play = await search(args.join(" "))
-if (!yt_play) return m.reply(lenguajeGB.smsMalError2() + `_${lenguajeGB.smsYT6()}_`)
-let { title, description, url, thumbnail, videoId, timestamp, views, published } = vid
-let video = `*◜⋯ ⋯ ⋯ Y O U T U B E ⋯ ⋯ ⋯◞*
+let additionalText = ''
+if (command === 'play') { 
+additionalText = '⬇️ A U D I O ⬇️'
+} else if (command === 'play2') {
+additionalText = '⬇️ V I D E O ⬇️'}
+let caption = `*◜⋯ ⋯ ⋯ Y O U T U B E ⋯ ⋯ ⋯◞*
 *◎ ${lenguajeGB.smsYT1()}*
 ${yt_play[0].title}
 
@@ -75,184 +83,213 @@ ${MilesNumber(yt_play[0].views)}
 
 *◎ URL*
 ${yt_play[0].url}
-*◜⋯ ⋯ ⋯ ⬇️ A U D I O ⬇️ ⋯ ⋯ ⋯◞*`.trim()
-url = 'https://www.youtube.com/watch?v=' + videoId
-//let link_web = `https://yt.btch.bz/downloadAudio?URL=${url}&videoName=video`  
-//let apiUrl = `https://api.akuari.my.id/downloader/yt1?link=${url}`
-let apiUrl = `https://api.lolhuman.xyz/api/ytplay?apikey=${lolkeysapi}&query=${url}`
-let response = await fetch(apiUrl)
-let apiResponse = await response.json() 
-let dl_audio_url = apiResponse.result.audio.link
-let dl_video_url = apiResponse.result.video.link
-ttl = apiResponse.result.title  
-let message = await conn.sendMessage(m.chat, { text: video, contextInfo: { externalAdReply: { title: wm, body: wait2.replace(/\*/g, ''), thumbnailUrl: thumbnail, sourceUrl: md, mediaType: 1, showAdAttribution: false, renderLargerThumbnail: true }}})
+*◜⋯ ⋯ ⋯ ${additionalText} ⋯ ⋯ ⋯◞*`  
+let message = await conn.sendMessage(m.chat, { text: caption, contextInfo: { externalAdReply: { title: wm, body: wait2.replace(/\*/g, ''), thumbnailUrl: yt_play[0].thumbnail, sourceUrl: md, mediaType: 1, showAdAttribution: false, renderLargerThumbnail: true }}})
 await m.react(sending)
 await message.react(waitemot)
 setTimeout(() => { message.react(waitemot2) }, 1000)
 //if (apiResponse.status !== 200) { 
 //setTimeout(() => { message.react(alert) }, 2000)}
-try{    
+if (command == 'play') {	
+try {
 let q = '128kbps'
 let v = yt_play[0].url
 const yt = await youtubedl(v).catch(async _ => await youtubedlv2(v))
 const dl_url = await yt.audio[q].download()
 const ttl = await yt.title
 const size = await yt.audio[q].fileSizeH
-await conn.sendMessage(m.chat, { audio: { url: dl_url }, mimetype: 'audio/mpeg' }, { quoted: m })
+await conn.sendMessage(m.chat, { audio: { url: dl_url }, mimetype: 'audio/mpeg', contextInfo: {
+externalAdReply: {
+title: ttl,
+body: "",
+thumbnailUrl: yt_play[0].thumbnail, 
+mediaType: 1,
+showAdAttribution: true,
+renderLargerThumbnail: true
+}}} , { quoted: m })   
+await m.react(sent)    
+await message.react(correct)
 } catch {
-try{ 
+try {
 const dataRE = await fetch(`https://api.akuari.my.id/downloader/youtube?link=${yt_play[0].url}`)
 const dataRET = await dataRE.json()
-await conn.sendMessage(m.chat, { audio: { url: dataRET.dl_audio }, mimetype: 'audio/mpeg' }, { quoted: m })
+await conn.sendMessage(m.chat, { audio: { url: dataRET.mp3[1].url }, mimetype: 'audio/mpeg', contextInfo: {
+externalAdReply: {
+title: yt_play[0].title,
+body: "",
+thumbnailUrl: yt_play[0].thumbnail, 
+mediaType: 1,
+showAdAttribution: true,
+renderLargerThumbnail: true
+}}} , { quoted: m })   
+await m.react(sent)    
+await message.react(correct)
 } catch {
-try{ 
+try {
+let humanLol = await fetch(`https://api.lolhuman.xyz/api/ytplay?apikey=${lolkeysapi}&query=${yt_play[0].title}`)
+let humanRET = await humanLol.json()
+await conn.sendMessage(m.chat, { audio: { url: humanRET.result.audio.link }, mimetype: 'audio/mpeg', contextInfo: {
+externalAdReply: {
+title: yt_play[0].title,
+body: "",
+thumbnailUrl: yt_play[0].thumbnail, 
+mediaType: 1,
+showAdAttribution: true,
+renderLargerThumbnail: true
+}}} , { quoted: m })       
+await m.react(sent)    
+await message.react(correct)
+} catch {     
+try {
+let lolhuman = await fetch(`https://api.lolhuman.xyz/api/ytaudio2?apikey=${lolkeysapi}&url=${yt_play[0].url}`)    
+let lolh = await lolhuman.json()
+let n = lolh.result.title || 'error'
+await conn.sendMessage(m.chat, { audio: { url: lolh.result.link}, mimetype: 'audio/mpeg', contextInfo: {
+externalAdReply: {
+title: n,
+body: "",
+thumbnailUrl: yt_play[0].thumbnail, 
+mediaType: 1,
+showAdAttribution: true,
+renderLargerThumbnail: true
+}}} , { quoted: m })   
+await m.react(sent)    
+await message.react(correct)
+} catch {   
+try {
 let searchh = await yts(yt_play[0].url)
 let __res = searchh.all.map(v => v).filter(v => v.type == "video")
 let infoo = await ytdl.getInfo('https://youtu.be/' + __res[0].videoId)
 let ress = await ytdl.chooseFormat(infoo.formats, { filter: 'audioonly' })
-await conn.sendMessage(m.chat, { audio: { url: ress.url }, mimetype: 'audio/mpeg' }, { quoted: m })   
-} catch { 
-await conn.sendMessage(m.chat, { audio: { url: dl_audio_url }, mimetype: 'audio/mpeg' }, { quoted: m })
-}}}
-await m.react(sent)    
-await message.react(correct)}
-if (command == 'play2') {
-let vid = (await yts(text)).all[0]
-const yt_play = await search(args.join(" "))
-if (!yt_play) return m.reply(lenguajeGB.smsMalError2() + `_${lenguajeGB.smsYT6()}_`)
-let { title, description, url, thumbnail, videoId, timestamp, views, published } = vid
-let video = `*◜⋯ ⋯ ⋯ Y O U T U B E ⋯ ⋯ ⋯◞*
-*◎ ${lenguajeGB.smsYT1()}*
-${yt_play[0].title}
-
-*◎ ${lenguajeGB.smsYT3()}*
-${secondString(yt_play[0].duration.seconds)}
-
-*◎ ${lenguajeGB.smsYT4()}*
-${MilesNumber(yt_play[0].views)}
-
-*◎ URL*
-${yt_play[0].url}
-*◜⋯ ⋯ ⋯ ⬇️ V I D E O ⬇️ ⋯ ⋯ ⋯◞*`.trim()
-let message = await conn.sendMessage(m.chat, { text: video, contextInfo: { externalAdReply: { title: wm, body: wait2.replace(/\*/g, ''), thumbnailUrl: thumbnail, sourceUrl: md, mediaType: 1, showAdAttribution: false, renderLargerThumbnail: true }}})
-await m.react(sending)
-await message.react(waitemot)
-setTimeout(() => { message.react(waitemot2) }, 1000)
-//if (apiResponse.status !== 200) { 
-//setTimeout(() => { message.react(alert) }, 2000)}
-//let mediaa = await ytMp4(yt_play[0].url)
-let apiUrl = `https://api.lolhuman.xyz/api/ytplay?apikey=${lolkeysapi}&query=${url}`
-let response = await fetch(apiUrl)
-let apiResponse = await response.json() 
-let dl_video_url = apiResponse.result.video.link
-let dl_pp_url = apiResponse.result.thumbnail
-await conn.sendMessage(m.chat, { video: { url: dl_video_url }, fileName: `error.mp4`, caption: `${wm}`, thumbnail: dl_pp_url, mimetype: 'video/mp4' }, { quoted: m }) 
-//await await conn.sendMessage(m.chat, { video: { url: dl_url }, fileName: `${ttl}.mp4`, mimetype: 'video/mp4', caption: `💜 ${ttl}`, thumbnail: await fetch(thumbnail) }, { quoted: m }) 
+await conn.sendMessage(m.chat, { audio: { url: ress.url }, mimetype: 'audio/mpeg', contextInfo: {
+externalAdReply: {
+title: __res[0].title,
+body: "",
+thumbnailUrl: yt_play[0].thumbnail, 
+mediaType: 1,
+showAdAttribution: true,
+renderLargerThumbnail: true
+}}} , { quoted: m })   
 await m.react(sent)    
 await message.react(correct)
+//conn.sendMessage(m.chat, { audio: { url: ress.url }, fileName: __res[0].title + '.mp3', mimetype: 'audio/mp4' }, { quoted: m })  
+} catch {
+reportError(e)
+}}}}}
+}  
+if (command == 'play2') {
+try {
+/*let videoURL = await fetch(APIs.lolhuman.url + `ytvideo2?apikey=${APIs.lolhuman.key}&url=${yt_play[0].url}`)
+let dataYT = await videoURL.json()
+await conn.sendMessage(m.chat, { video: { url: dataYT.result.link }, fileName: `${ttl}.mp4`, mimetype: 'video/mp4', caption: `${wm}`, thumbnailUrl: yt_play[0].thumbnail }, { quoted: m })*/
+qu = '360'
+q = qu + 'p'
+yt = await youtubedl(yt_play[0].url).catch(async _ => await youtubedlv2(yt_play[0].url))
+dl_url = await yt.video[q].download()
+ttl = await yt.title
+size = await yt.video[q].fileSizeH
+await conn.sendMessage(m.chat, { video: { url: dl_url }, fileName: `${ttl}.mp4`, mimetype: 'video/mp4', caption: null, thumbnail: await fetch(yt.thumbnail) }, { quoted: m })
+await m.react(sent)
+await message.react(correct)  
+} catch (e) {
+reportError(e)
+}    
 }} catch (e) {
-reportError(e)}    
+reportError(e)
+}
 break
             
 case isCommand4:
 if (!args[0]) return m.reply(lenguajeGB.smsMalused2() + `*${usedPrefix + command} https://youtu.be/ejemplo*\n*${usedPrefix + command} https://www.youtube.com/ejemplo*`)
 await conn.reply(m.chat, lenguajeGB.smsAvisoEG() + '*' + lenguajeGB.smsYTA1() + '*', m)
 try {
-q = '128kbps'
-v = args[0]
-yt = await youtubedl(v).catch(async _ => await youtubedlv2(v)).catch(async _ => await youtubedlv3(v))
-dl_url = await yt.audio[q].download()
-ttl = await yt.title
-size = await yt.audio[q].fileSizeH
-await conn.sendFile(m.chat, dl_url, ttl + '.mp3', null, m, false, { mimetype: 'audio/mp4' })
-} catch {
-try {
-let searchh = await yts(text)
-let __res = searchh.all.map(v => v).filter(v => v.type == "video")
-let infoo = await ytdl.getInfo('https://youtu.be/' + __res[0].videoId)
-let ress = await ytdl.chooseFormat(infoo.formats, { filter: 'audioonly' })
-await conn.sendMessage(m.chat, { audio: { url: ress.url }, mimetype: 'audio/mpeg' }, { quoted: m })  
+let q = '128kbps'
+let v = text
+const yt = await youtubedl(v).catch(async _ => await youtubedlv2(v))
+const ttl = await yt.title    
+let audioBuffer = await getBuffer(`https://api.cafirexos.com/api/v1/ytmp3?url=${text.trim()}`)
+await conn.sendMessage(m.chat, { audio: audioBuffer, mimetype: 'audio/mpeg', fileName: ttl + `.mp3`}, {quoted: m})
 } catch (e) {
 reportError(e)
-}}       
+}       
 break
         
 case isCommand5:
 if (!args[0]) return m.reply(lenguajeGB.smsMalused2() + `*${usedPrefix + command} https://youtu.be/ejemplo*\n*${usedPrefix + command} https://www.youtube.com/ejemplo*`)
 await conn.reply(m.chat, lenguajeGB.smsAvisoEG() + '*' + lenguajeGB.smsYTA2() + '*', m)
-let vid = (await yts(text)).all[0]
-const yt_play = await search(args.join(" "))
-let { title, description, url, thumbnail, videoId, timestamp, views, published } = vid
 try {
-let searchh = await yts(text)
-let __res = searchh.all.map(v => v).filter(v => v.type == "video")
-let infoo = await ytdl.getInfo('https://youtu.be/' + __res[0].videoId)
-let ress = await ytdl.chooseFormat(infoo.formats, { filter: 'audioonly' })
-await conn.sendMessage(m.chat, { document: { url: ress.url }, caption: description, mimetype: 'audio/mpeg', fileName: `${title}.mp3`}, { quoted: m })
-} catch {
-try {
-lolhuman = await fetch(`https://api.lolhuman.xyz/api/ytaudio2?apikey=${lolkeysapi}&url=${args[0]}`)   
-lolh = await lolhuman.json()
-n = lolh.result.title || 'error'
-n2 = lolh.result.link
-n3 = lolh.result.size
-cap = `🎧 *AUDIO* 🎧\n\n*⎔ ${n}*\n\n*⎔ ${n3}*`.trim()
-await conn.sendMessage(m.chat, { document: { url: n2 }, caption: cap2, mimetype: 'audio/mpeg', fileName: `${n}.mp3`}, {quoted: m})
+let streamPipeline = promisify(pipeline)
+let videoUrl = text
+let videoInfo = await ytdl.getInfo(videoUrl)
+let { videoDetails } = videoInfo
+let { title, thumbnails, lengthSeconds, viewCount, uploadDate } = videoDetails
+let thumbnail = thumbnails[0].url
+let audioStream = ytdl(videoUrl, { filter: 'audioonly', quality: 'highestaudio', })
+let tmpDir = os.tmpdir()
+let writableStream = fs.createWriteStream(`${tmpDir}/${title}.mp3`)
+await streamPipeline(audioStream, writableStream)
+let audioD = `${tmpDir}/${title}.mp3`
+let info = `Título: ${title}\nTiempo: ${lengthSeconds}s\nVistas: ${viewCount}\nSubido: ${uploadDate}`
+await conn.sendMessage(m.chat, { document: { url: audioD }, mimetype: 'audio/mpeg', fileName: title, caption: null }, { quoted: m })
 } catch (e) {
 reportError(e)
-}}         
+}         
 break
         
 case isCommand6:
 if (!args[0]) return m.reply(lenguajeGB.smsMalused2() + `*${usedPrefix + command} https://youtu.be/ejemplo*\n*${usedPrefix + command} https://www.youtube.com/ejemplo*`)
 await conn.reply(m.chat, lenguajeGB.smsAvisoEG() + '*' + lenguajeGB.smsYTV1() + '*', m)
 try {
-qu = '360'
-q = qu + 'p';
-v = args[0]
-yt = await youtubedl(v).catch(async (_) => await youtubedlv2(v))
-dl_url = await yt.video[q].download()
-ttl = await yt.title
-size = await yt.video[q].fileSizeH
-await conn.sendMessage(m.chat, { video: { url: dl_url }, fileName: `${ttl}.mp4`, mimetype: 'video/mp4', caption: `*💫 ${ttl}*${size !== undefined ? `\n*⚖️ ${size}*` : ''}`, thumbnail: await fetch(yt.thumbnail) }, { quoted: m })
-} catch {
-try {
-lolhuman = await fetch(`https://api.lolhuman.xyz/api/ytvideo2?apikey=${lolkeysapi}&url=${args[0]}`)    
-lolh = await lolhuman.json()
-n = lolh.result.title || 'error'
-n2 = lolh.result.link
-n3 = lolh.result.size
-n4 = lolh.result.thumbnail
-await conn.sendMessage(m.chat, { video: { url: n2 }, fileName: `${n}.mp4`, mimetype: 'video/mp4', caption: `*💫 ${n}*${n3 !== undefined ? `\n*⚖️ ${n3}*` : ''}`, thumbnail: await fetch(n4) }, { quoted: m })
+const yt_play = await search(args.join(" "))
+let q = '128kbps'
+let v = text.trim()
+const yt = await youtubedl(v).catch(async _ => await youtubedlv2(v))
+const ttl = await yt.title    
+let videoURL = await conn.getFile(`https://api.cafirexos.com/api/v1/ytmp4?url=${v}`)
+await conn.sendMessage(m.chat, { video: videoURL.data, fileName: `${ttl}.mp4`, mimetype: 'video/mp4', caption: `${wm}`, thumbnailUrl: yt_play[0].thumbnail }, { quoted: m })
 } catch (e) {
-reportError(e)}}     
+reportError(e)}     
 break
 
 case isCommand7:
 if (!args[0]) return m.reply(lenguajeGB.smsMalused2() + `*${usedPrefix + command} https://youtu.be/ejemplo*\n*${usedPrefix + command} https://www.youtube.com/ejemplo*`)
 await conn.reply(m.chat, lenguajeGB.smsAvisoEG() + '*' + lenguajeGB.smsYTV2() + '*', m)
-try {
-qu = args[1] || '360'
-q = qu + 'p'
-v = args[0]
-yt = await youtubedl(v).catch(async _ => await youtubedlv2(v)).catch(async _ => await youtubedlv3(v))
-dl_url = await yt.video[q].download()
-ttl = await yt.title
-size = await yt.video[q].fileSizeH
-cap = `📡 *VIDEO* 📡\n\n*⎔ ${ttl}*\n\n*⎔ ${size}*`.trim()
-await conn.sendMessage(m.chat, { document: { url: dl_url }, caption: cap, mimetype: 'video/mp4', fileName: ttl + `.mp4`}, {quoted: m})
-} catch {
-try{
-lolhuman = await fetch(`https://api.lolhuman.xyz/api/ytvideo2?apikey=${lolkeysapi}&url=${args[0]}`)    
-lolh = await lolhuman.json()
-n = lolh.result.title || 'error'
-n2 = lolh.result.link
-n3 = lolh.result.size
-cap = `🎥 *VIDEO* 🎥\n\n*⎔ ${n}*\n\n*⎔ ${n3}*`.trim()
-await conn.sendMessage(m.chat, { document: { url: n2 }, caption: cap, mimetype: 'video/mp4', fileName: n + `.mp4`}, {quoted: m})
+try { 
+const streamPipeline = promisify(pipeline)
+const videoUrl = text
+const videoInfo = await ytdl.getInfo(videoUrl)
+const { videoDetails } = videoInfo
+const { title, thumbnails, lengthSeconds, viewCount, uploadDate } = videoDetails
+const thumbnail = thumbnails[0].url
+const videoStream = ytdl(videoUrl, { filter: 'audioandvideo', quality: 'lowest', })
+//const writableStream = fs.createWriteStream(`tmp/${title}.mp4`)
+//await streamPipeline(videoStream, writableStream)  
+//await conn.sendMessage(m.chat, { document: { url: `tmp/${title}.mp4` }, mimetype: 'video/mp4', fileName: title, caption: null }, { quoted: m })
+async function crearWritableStreamAsync() {
+const filePath = `tmp/${title}.mp4`
+const writableStream = fs.createWriteStream(filePath)
+return writableStream
+}
+async function transferirDatos(videoStream, writableStream) {
+await streamPipeline(videoStream, writableStream)
+}
+async function fileVideo() {
+const writableStream = await crearWritableStreamAsync(title)
+await transferirDatos(videoStream, writableStream)
+}
+let message
+async function enviarMensaje() {
+message = await conn.sendMessage(m.chat, { document: { url: `tmp/${title}.mp4` }, mimetype: 'video/mp4', fileName: title, caption: null }, { quoted: m })
+}
+async function videoResult(m) {
+await fileVideo()
+await enviarMensaje()
+await m.react(sent)
+await message.react(correct)
+}
+videoResult(m)
 } catch (e) {
 reportError(e)
-} 
 }
 break
         
@@ -306,8 +343,10 @@ break
 case isCommand9:
 if (!args[0]) return m.reply(lenguajeGB.smsMalused2() + `*${usedPrefix + command} https://www.mediafire.com/file/04kaaqx9oe3tb8b/DOOM_v13_CLONE%255BCOM.FM%255D.apk/file*`)
 try {  
-let res = await mediafireDl(args[0])
-let { name, date, mime, link, size:peso } = res
+let res = await mediafiredl(args[0])  
+let res2 = await mediafireDl(args[0])  
+let { filename:name, ext:mime, url, filesizeH:peso } = res
+let { date } = res2   
 let caption = `
 🗂️ ${name}
 ⌛ ${date}
@@ -316,7 +355,8 @@ let caption = `
 
 ${lenguajeGB.smsMediaFr()}`.trim()
 await m.reply(caption)
-await conn.sendFile(m.chat, link, name, '', m, null, { mimetype: mime, asDocument: true })  
+//await conn.sendFile(m.chat, link, name, '', m, null, { mimetype: mime, asDocument: true })  
+await conn.sendFile(m.chat, url, name, '', m, null, { mimetype: mime, asDocument: true })
 } catch (e) {
 await m.reply(lenguajeGB['smsMalError3']() + '\n*' + lenguajeGB.smsMensError1() + '*\n*' + usedPrefix + `${lenguajeGB.lenguaje() == 'es' ? 'reporte' : 'report'}` + '* ' + `${lenguajeGB.smsMensError2()} ` + usedPrefix + command)
 console.log(`❗❗ ${lenguajeGB['smsMensError2']()} ${usedPrefix + command} ❗❗`)
@@ -338,69 +378,152 @@ break
 case isCommand10:
 if (!args[0]) return m.reply(lenguajeGB.smsMalused2() + `*${usedPrefix + command} https://youtu.be/ejemplo*\n*${usedPrefix + command} https://www.youtube.com/ejemplo*`)
 await conn.reply(m.chat, lenguajeGB.smsAvisoEG() + '*' + lenguajeGB.smsYTV1() + '*', m)
+try { 
+const streamPipeline = promisify(pipeline)
+const videoUrl = text
+const videoInfo = await ytdl.getInfo(videoUrl)
+const { videoDetails } = videoInfo
+const { title, thumbnails, lengthSeconds, viewCount, uploadDate } = videoDetails
+const thumbnail = thumbnails[0].url
+const videoStream = ytdl(videoUrl, { filter: 'audioandvideo', quality: 'highest', })
+async function crearWritableStreamAsync() {
+const filePath = `tmp/${title}.mp4`
+const writableStream = fs.createWriteStream(filePath)
+return writableStream
+}
+async function transferirDatos(videoStream, writableStream) {
+await streamPipeline(videoStream, writableStream)
+}
+async function fileVideo() {
+const writableStream = await crearWritableStreamAsync(title)
+await transferirDatos(videoStream, writableStream)
+}
+let message
+async function enviarMensaje() {
+message = await conn.sendMessage(m.chat, { video: { url: `tmp/${title}.mp4` }, mimetype: 'video/mp4', fileName: title, caption: null }, { quoted: m })
+}
+async function videoResult(m) {
+await fileVideo()
+await enviarMensaje()
+await m.react(sent)
+await message.react(correct)
+}
 try {
-q = ''
-v = args[0]
-yt = await youtubedl(v).catch(async _ => await youtubedlv2(v)).catch(async _ => await youtubedlv3(v))
-  let quality = null
-let qualities = ['2160p', '1440p', '1080p', '720p', '480p', '360p', '240p', '144p']
-
-for (let i = 0; i < qualities.length; i++) {
-currentQuality = qualities[i]
-  
-if (yt.video[currentQuality]) {
-dl_url = await yt.video[currentQuality].download();
-size = currentQuality
-quality = currentQuality
-break
-}}
-ttl = await yt.title;
-await conn.sendMessage(m.chat, { video: { url: dl_url }, fileName: `${ttl}.mp4`, mimetype: 'video/mp4', caption: `*🌻 ${ttl}*\n*🔱 ${size == '720p' ? 'HD' : size == '1080p' ? 'FULL HD' : size == '1440p' ? '2K' : '4K'}*`, thumbnail: await fetch(yt.thumbnail) }, { quoted: m })
+videoResult(m)
 } catch (e) {
 reportError(e)
-}        
+}} catch (e) {
+reportError(e)
+}
 break
 
-//codigo adaptado por https://github.com/elrebelde21
 case isCommand11:
 if (!text) return conn.reply(m.chat, `${lenguajeGB['smsMalused2']()}\n*${usedPrefix + command} https://vm.tiktok.com/ZM2e66NBM/?t=1*`, m)
 if (!/(?:https:?\/{2})?(?:w{3}|vm|vt|t)?\.?tiktok.com\/([^\s&]+)/gi.test(text)) return conn.reply(m.chat, `${lenguajeGB['smsAvisoFG']()}*${lenguajeGB['smsYT6']()}*`, m)  
+await conn.reply(m.chat, `${lenguajeGB['smsAvisoEG']()}*${lenguajeGB['smsTiktok']()}*`, m)  
 try {
-const { author: { nickname }, video, description, audio } = await tiktokdl(args[0])
-.catch(async _ => await tiktokdlv2(args[0]))
-.catch(async _ => await tiktokdlv3(args[0]))
-const url = video.no_watermark2 || video.no_watermark || 'https://tikcdn.net' + video.no_watermark_raw || video.no_watermark_hd
-await conn.reply(m.chat, `${lenguajeGB['smsAvisoEG']()}*${lenguajeGB['smsTiktok']()}*`, m)    
-await conn.sendFile(m.chat, url, 'tiktok.mp4', `
-💜 *${nickname}*`.trim(), m)
-await conn.sendMessage(m.chat, { audio: { url: url }, fileName: 'tiktok.mp3', mimetype: 'audio/mp4', ptt: false }, { quoted: m })     
+let response = await fetch(APIs.aemt.url + `download/tikdl?url=${text}`)
+let data = await response.json()
+const { result } = data
+const { info_video, url: { nowm } } = result || {}
+const { author_info = {} } = result
+const { nickname, profile, id } = author_info
+const { 
+title = 'No encontrado', 
+region = 'No encontrado', 
+thumbnail = 'No encontrado', 
+duration = 'No encontrado', 
+total_download = 'No encontrado', 
+total_play = 'No encontrado', 
+total_share = 'No encontrado', 
+total_comment = 'No encontrado' 
+} = info_video || {}
+const minutes = Math.floor(duration / 60)
+const seconds = duration % 60
+let durationText = ''
+if (minutes > 0) {
+durationText += `${minutes} minutos`
+if (seconds > 0) durationText += ` y ${seconds} segundos`
+} else {
+durationText += `${seconds} segundos`
+}
+const flag = codeToEmoji(region)
+const country = flagToCountry(flag).name
+response = await fetch(APIs.aemt.url + `download/tiktokslide?url=${text}`)
+data = await response.json()
+const { music_info, author: author_info2, digg_count } = data.result.data
+const { id: id_audio, title: title_audio, author: author_audio } = music_info
+const { unique_id, avatar } = author_info2
+let txtTK = `
+> *INFORMACIÓN DE USUARIO*\n
+👤 *Usuario:* \`${unique_id}\` 
+🔗 *Enlace:* tiktok.com/@${unique_id} 
+📌 *Nombre:* ${nickname}
+🆔 \`${id}\`
+✨ *País:* ${flag} \`\`\`${country}\`\`\`\n
+> *INFORMACIÓN DEL VÍDEO*\n
+🕒 *Duración:* ${durationText}
+📝 *Descripción:* ${title.replace(/(?:^|\s)(#[^#\s]+)(?=\s|$)/g, ' _$1_').replace(/(?:^|\s)(@[^\s]+)(?=\s|$)/g, ' *$1*')}\n
+> *INFORMACIÓN DEL SONIDO*\n
+🎙️ *Autor:* ${author_audio}
+🎶 *Música:* ${title_audio}
+📀 *Cover:* ${title_audio && id_audio ? `tiktok.com/music/${title_audio.trim().replace(/ /g, '-')}-${id_audio}` : 'Desconocido'}\n
+> *INFORMACIÓN ADICIONAL*\n
+👀 *Reproducciones:* ${formatNumber(total_play)}
+❤️ *Me gusta:* ${formatNumber(digg_count)}
+📈 *Descargas:* ${formatNumber(total_download)}
+🔁 *Compartidos:* ${formatNumber(total_share)}
+💬 *Comentarios:* ${formatNumber(total_comment)}`.trim()
+await conn.sendMessage(m.chat, { video: { url: nowm }, mimetype: 'video/mp4', caption: txtTK }, { quoted: m }) 
+await conn.sendMessage(m.chat, { audio: { url: nowm }, fileName: 'tiktok.mp3', mimetype: 'audio/mp4', ptt: false }, { quoted: m }) 
+} catch (e) {
+try{
+const responseTK = await fetch(APIs.aemt.url + `download/ttdl?url=${text}`)
+const dataTK = await responseTK.json()  
+await conn.sendMessage(m.chat, { video: { url: dataTK.result.video }, mimetype: 'video/mp4', caption: null }, { quoted: m }) 
+await conn.sendMessage(m.chat, { audio: { url: dataTK.result.audio }, fileName: 'tiktok.mp3', mimetype: 'audio/mp4', ptt: false }, { quoted: m }) 
 } catch (e) {
 reportError(e)
-}         
+}}
 break
-   
+  
 case isCommand12:
 if (!args[0]) return m.reply(lenguajeGB.smsMalused2() + `*${usedPrefix + command} https://youtu.be/ejemplo*\n*${usedPrefix + command} https://www.youtube.com/ejemplo*`)
 await conn.reply(m.chat, lenguajeGB.smsAvisoEG() + '*' + lenguajeGB.smsYTV2() + '*', m)
-try {
-q = ''
-v = args[0]
-yt = await youtubedl(v).catch(async _ => await youtubedlv2(v)).catch(async _ => await youtubedlv3(v))
-let quality = null
-let qualities = ['2160p', '1440p', '1080p', '720p', '480p', '360p', '240p', '144p']
-for (let i = 0; i < qualities.length; i++) {
-currentQuality = qualities[i] 
-if (yt.video[currentQuality]) {
-dl_url = await yt.video[currentQuality].download();
-size = currentQuality
-quality = currentQuality
-break
-}}
-ttl = await yt.title;
-await conn.sendMessage(m.chat, { document: { url: dl_url }, caption: `*🪷 ${ttl}*\n*🎞️ ${size == '720p' ? 'HD' : size == '1080p' ? 'FULL HD' : size == '1440p' ? '2K' : '4K'}*`, mimetype: 'video/mp4', fileName: ttl + `.mp4`}, {quoted: m})
+try { 
+const streamPipeline = promisify(pipeline)
+const videoUrl = text
+const videoInfo = await ytdl.getInfo(videoUrl)
+const { videoDetails } = videoInfo
+const { title, thumbnails, lengthSeconds, viewCount, uploadDate } = videoDetails
+const thumbnail = thumbnails[0].url
+const videoStream = ytdl(videoUrl, { filter: 'audioandvideo', quality: 'highest', })
+async function crearWritableStreamAsync() {
+const filePath = `tmp/${title}.mp4`
+const writableStream = fs.createWriteStream(filePath)
+return writableStream
+}
+async function transferirDatos(videoStream, writableStream) {
+await streamPipeline(videoStream, writableStream)
+}
+async function fileVideo() {
+const writableStream = await crearWritableStreamAsync(title)
+await transferirDatos(videoStream, writableStream)
+}
+let message
+async function enviarMensaje() {
+message = await conn.sendMessage(m.chat, { document: { url: `tmp/${title}.mp4` }, mimetype: 'video/mp4', fileName: title, caption: null }, { quoted: m })
+}
+async function videoResult(m) {
+await fileVideo()
+await enviarMensaje()
+await m.react(sent)
+await message.react(correct)
+}
+videoResult(m)
 } catch (e) {
 reportError(e)
-}        
+}
 break
         
 case isCommand13:
@@ -410,6 +533,10 @@ text = args.slice(0).join(" ")
 text = m.quoted.text
 } else return conn.reply(m.chat, `${lenguajeGB['smsMalused3']()}\n*${usedPrefix + command} ${lenguajeGB.smsIAimage2()}*`, m)
 await m.reply(wait) 
+try {
+let urlDALLE = `https://aemt.me/dalle?text=${text}`
+await conn.sendFile(m.chat, await (await fetch(urlDALLE)).buffer(), 'image.jpg', lenguajeGB.smsIAimage() + `\n\n_${text}_`, m)
+} catch {
 try{   
 let response = await fetch(`https://api.lolhuman.xyz/api/diffusion-prompt?apikey=${lolkeysapi}&prompt=${text}`)
 let image = await response.buffer()
@@ -420,7 +547,7 @@ let res = `https://api.lolhuman.xyz/api/dall-e?apikey=${lolkeysapi}&text=${text}
 await conn.sendFile(m.chat, res, 'image.jpg', lenguajeGB.smsIAimage() + `\n\n_${text}_`, m)
 } catch (e) {
 reportError(e)} 
-}        
+}}      
 break
         
 case isCommand14:
@@ -542,8 +669,24 @@ let urlrepo = `https://api.github.com/repos/${user}/${repo}/zipball`;
 const filename = (await fetch(urlrepo, {method: 'HEAD'})).headers.get('content-disposition').match(/attachment; filename=(.*)/)[1];
 conn.sendFile(m.chat, urlrepo, filename, null, m);
 break
+
+case isCommand20:
+try {
+let q = m.quoted ? m.quoted : m
+let mime = (q.msg || q).mimetype || q.mediaType || ''
+if (/image/g.test(mime) && !/webp/g.test(mime)) {
+let buffer = await q.download()
+await m.reply(wait)
+let media = await (uploader)(buffer)
+let json = await (await fetch(`https://aemt.me/bardimg?url=${media}&text=${text}`)).json()
+await conn.sendMessage(m.chat, { text: json.result }, { quoted: m })
+} else return m.reply(`*RESPONDE A UNA IMAGEN CON UN TEXTO*\n\n*EJEMPLO*\n*${usedPrefix + command}* describe esta imagen`)
+} catch (e) {
+reportError(e)}
+break   
+        
 }}
-handler.command = /^(gimage|imagen?|play|play2|fgmp3|dlmp3|getaud|yt(a|mp3)?|ytmp3doc|ytadoc|fgmp4|dlmp4|getvid|yt(v|mp4)?|ytmp4doc|ytvdoc|facebook|fb|facebookdl|fbdl|mediafire(dl)?|dlmediafire|ytmax|ytmaxdoc|tiktok|tkdl|dalle|openiamage|aiimage|aiimg|aimage|iaimagen|openaimage|openaiimage|openjourney|journey|midjourney|spotify|music|spot(ify)?search|i(nsta)?g(ram)?(dl)?|igimage|igdownload|(dl)?tw(it(ter(dl|x)?)?)?|x|t?tx|gitclone|clonarepo|clonarrepo|repoclonar)$/i
+handler.command = /^(gimage|imagen?|play|play2|fgmp3|dlmp3|getaud|yt(a|mp3)?|ytmp3doc|ytadoc|fgmp4|dlmp4|getvid|yt(v|mp4)?|ytmp4doc|ytvdoc|facebook|fb|facebookdl|fbdl|mediafire(dl)?|dlmediafire|ytmax|ytmaxdoc|tiktok|tkdl|dalle|openiamage|aiimage|aiimg|aimage|iaimagen|openaimage|openaiimage|openjourney|journey|midjourney|spotify|music|spot(ify)?search|i(nsta)?g(ram)?(dl)?|igimage|igdownload|(dl)?tw(it(ter(dl|x)?)?)?|x|t?tx|gitclone|clonarepo|clonarrepo|repoclonar|bardimg|bardimage|geminiimg|geminiimage|geminimg|geminimage)$/i
 handler.register = true
 export default handler
 
@@ -695,3 +838,15 @@ const spotify = new Spotify.default(credentials)
 const res = await spotify.getTrack(url).catch(() => {
 return { error: 'Fallo la descarga' }})
 return { data: res, audio: await spotify.downloadTrack(url) }}
+
+const getBuffer = async (url, options) => {
+options ? options : {}
+const res = await axios({method: 'get', url, headers: {'DNT': 1, 'Upgrade-Insecure-Request': 1,}, ...options, responseType: 'arraybuffer'})
+return res.data
+}
+
+function formatNumber(number) {
+if (number < 1000) return number.toString()
+if (number < 1000000) return (number / 1000).toFixed(1) + 'K'
+return (number / 1000000).toFixed(1) + 'M'
+}
